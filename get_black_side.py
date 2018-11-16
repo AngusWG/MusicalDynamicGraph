@@ -11,11 +11,11 @@ import sys
 import numpy as np
 import cv2
 
-IMAGE_SIZE = 400
+from config import pic_src, IMAGE_SIZE, height, width
 
 
 # 按照指定图像大小调整尺寸
-def resize_image(image, height=IMAGE_SIZE * 4, width=IMAGE_SIZE * 3):
+def resize_image(image, height=height, width=width):
     top, bottom, left, right = (0, 0, 0, 0)
 
     # 获取图像尺寸
@@ -105,7 +105,12 @@ def demo():
 
 
 def server():
-    read_path(r'pic_src')
+    if len(os.listdir(pic_src)) != 0:
+        print("pic_src有图片 跳过加黑边步骤")
+        return
+    print("开始加黑边")
+    read_path(pic_src)
+    print("加黑边完毕")
     pass
 
 

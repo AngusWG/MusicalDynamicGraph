@@ -1,36 +1,12 @@
-# import wave
-# import numpy as np
-# import matplotlib.pyplot as plt
-#
-# # https://blog.csdn.net/qq_39516859/article/details/79903710
-# filepath = "a.wav"
-# f = wave.open(filepath, 'rb')
-#
-# params = f.getparams()
-# nchannels, sampwidth, framerate, nframes = params[:4]
-# strData = f.readframes(nframes)
-# w = np.fromstring(strData, dtype=np.int16)
-# w = w * 1.0 / (max(abs(w)))
-# w = np.reshape(w, [nframes, nchannels])
-# time = np.arange(0, nframes) * (1.0 / framerate)
-#
-# plt.figure()
-# plt.subplot(5, 1, 1)
-# plt.plot(time, w[:, 0])
-# plt.xlabel("Time(s)")
-# plt.title("First Channel")
-# plt.savefig("a.png")
-# plt.close()
-
+import os
 import wave as we
 import numpy as np
 import ffmpy
-import matplotlib.pyplot as plt
 import cv2
 
-IMAGE_SIZE = 400
-height = IMAGE_SIZE * 4
-width = IMAGE_SIZE * 3
+from config import *
+
+music_path.replace(".mp3", ".wav")
 
 
 def get_imgs(path="pic"):
@@ -39,16 +15,27 @@ def get_imgs(path="pic"):
     return [os.path.join(path, i) for i in s]
 
 
-def made_video(t, k):
+def made_video(datause, time):
+    print("start made_video")
     img_path = get_imgs()
-    videoWriter = cv2.VideoWriter('video\out1.avi', cv2.VideoWriter_fourcc(*'MJPG'), 3, (400 * 4, 400 * 3))
-    img_path = img_path * 3
-    for path in img_path:
-        print(path)
-        img = cv2.imread(path)
-        img = cv2.resize(img, (400 * 4, 400 * 3))
+    videoWriter = cv2.VideoWriter(out_vidoeo1, cv2.VideoWriter_fourcc(*'MJPG'), pics_for_1s, (height, width))
+
+    pic_index = 0
+    for i in range(len(datause)):
+        if i == 0:
+            continue
+        if i == len(datause) - 1:
+            break
+        if datause[i] > datause[i - 1] and datause[i] > datause[i + 1]:
+            print(i)
+            pic_index = pic_index + 1
+        img = cv2.imread(img_path[pic_index % len(img_path)])
+        img = cv2.resize(img, (height, width))
         videoWriter.write(img)
+        print(i, len(datause))
     videoWriter.release()
+    print("\nmade_video over")
+
 
 
 def merge_audio_video(wav_file_name: str, avi_file_name: str, audio_video_file_name: str) -> str or None:
@@ -57,7 +44,8 @@ def merge_audio_video(wav_file_name: str, avi_file_name: str, audio_video_file_n
     1. takes names of .wav and .avi file
     2. merges them into one file
     '''
-
+    if os.path.getsize(audio_video_file_name):
+        os.remove(audio_video_file_name)
     try:
         ffmpy.FFmpeg(inputs={wav_file_name: None, avi_file_name: None}, outputs={audio_video_file_name: None}).run()
         return audio_video_file_name
@@ -66,36 +54,40 @@ def merge_audio_video(wav_file_name: str, avi_file_name: str, audio_video_file_n
         return None
 
 
-def wavread(path):
-    wavfile = we.open(path, "rb")
+def wavread():
+    wavfile = we.open(music_path, "rb")
     params = wavfile.getparams()
     framesra, frameswav = params[2], params[3]
     datawav = wavfile.readframes(frameswav)
     wavfile.close()
     datause = np.fromstring(datawav, dtype=np.short)
-    # datause.shape = -1, 2
-    # datause = datause.T
+    datause.shape = -1, 2
+    datause = datause.T
     time = np.arange(0, frameswav) * (1.0 / framesra)
-    return time, datause
+
+    缩小 = int(framesra / pics_for_1s)
+    time = time[:-1 * (len(time) % 缩小)]
+    time = np.array(time).reshape(-1, 缩小)
+    time = np.mean(time, axis=1)
+
+    datause = datause[0]
+    datause = datause[:-1 * (len(datause) % 缩小)]
+    datause = np.array(datause).reshape(-1, 缩小)
+    datause = np.mean(datause, axis=1)
+
+    # # 求导
+    # datause = np.gradient(datause)
+    return datause, time
 
 
 def main():
-    path = "a.wav"
-    x, y = wavread(path)
-    k = np.gradient(y)
-
-    # print(np.max(x))
-    # for i in range(len(x)):
-    #     print(int(x[i]), y[i], k[i])
-    #     x = np.array(x[:len(x) % 1 * -1]).reshape(int(len(x) / 1), i)
-    #     x = np.mean(x, axis=0)
-    # print(x, y, k)
-    # made_video(x, k)
+    datause, time = wavread()
+    made_video(datause, time)
 
 
 if __name__ == '__main__':
     main()
     # test()
     # 音频视屏融合
-    # merge_audio_video("a.wav", "video\out1.avi", "video\out2.avi")
+    merge_audio_video(music_path, out_vidoeo1, out_vidoeo2)
     pass

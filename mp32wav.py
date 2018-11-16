@@ -5,7 +5,7 @@
 # @Email   : 740713651@qq.com
 import os
 
-from pydub import AudioSegment  ###需要安装pydub、ffmpeg
+from pydub import AudioSegment
 
 
 def trans_mp3_to_wav(file):
@@ -14,11 +14,12 @@ def trans_mp3_to_wav(file):
 
 
 def server():
-    files = os.listdir(".")
+    _dir = "music"
+    files = os.listdir(_dir)
     for file in files:
         if file.endswith(".mp3") and file[:-3] + "wav" not in files:
-            print(file)
-            trans_mp3_to_wav(file)
+            print(os.path.join(_dir, file, "转换为.wav格式成功"))
+            trans_mp3_to_wav(os.path.join(_dir, file))
 
 
 if __name__ == '__main__':
